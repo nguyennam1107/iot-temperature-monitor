@@ -1,23 +1,40 @@
 const jwt = require('jsonwebtoken');
+const User = require('../models/User');
 const { logger } = require('../utils/logger');
 
-const authenticate = async (req, res, next) => {
+exports.protect = async (req, res, next) => {
   try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+    let token;
 
-    if (!token) {
-      return res.status(401).json({ message: 'Authentication required' });
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      token = req.headers.authorization.split(' ')[1];
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
-    next();
+    if (!token) {
+      return res.status(401).json({ message: 'Not authorized to access this route' });
+    }
+
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      req.user = await User.findById(decoded.userId).select('-password');
+      next();
+    } catch (error) {
+      logger.error('JWT verification error:', error);
+      return res.status(401).json({ message: 'Not authorized to access this route' });
+    }
   } catch (error) {
-    logger.error('Authentication error:', error);
-    res.status(401).json({ message: 'Invalid token' });
+    logger.error('Auth middleware error:', error);
+    res.status(500).json({ message: 'Error authenticating request' });
   }
 };
 
-module.exports = {
-  authenticate
+exports.authorize = (...roles) => {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({
+        message: `User role ${req.user.role} is not authorized to access this route`
+      });
+    }
+    next();
+  };
 }; 

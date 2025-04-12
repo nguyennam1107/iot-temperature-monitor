@@ -1,16 +1,30 @@
 const express = require('express');
 const router = express.Router();
-const deviceController = require('../controllers/device.controller');
-const { authenticate } = require('../middleware/auth.middleware');
-const { validateDeviceData } = require('../middleware/validate.middleware');
+const { protect, authorize } = require('../middleware/auth.middleware');
+const {
+  getAllDevices,
+  getDeviceById,
+  createDevice,
+  updateDevice,
+  deleteDevice,
+  getDeviceReadings,
+  getDeviceAlerts
+} = require('../controllers/device.controller');
 
-// Apply authentication middleware to all routes
-router.use(authenticate);
+// Protected routes
+router.use(protect);
 
-// Routes
-router.post('/', deviceController.createDevice);
-router.post('/update', validateDeviceData, deviceController.updateDeviceData);
-router.get('/', deviceController.getUserDevices);
-router.get('/:id', deviceController.getDeviceById);
+// Device routes
+router.route('/')
+  .get(getAllDevices)
+  .post(authorize('admin'), createDevice);
+
+router.route('/:deviceId')
+  .get(getDeviceById)
+  .put(authorize('admin'), updateDevice)
+  .delete(authorize('admin'), deleteDevice);
+
+router.get('/:deviceId/readings', getDeviceReadings);
+router.get('/:deviceId/alerts', getDeviceAlerts);
 
 module.exports = router; 
