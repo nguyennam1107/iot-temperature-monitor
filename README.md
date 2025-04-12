@@ -23,7 +23,7 @@ A Node.js backend for monitoring temperature and humidity data from ESP32 device
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/iot-temperature-monitor.git
+git clone https://github.com/nguyennam1107/iot-temperature-monitor.git
 cd iot-temperature-monitor/Backend
 ```
 
@@ -116,4 +116,4 @@ npm run dev
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details. 
+This project is licensed under the MIT License - see the LICENSE file for details.
