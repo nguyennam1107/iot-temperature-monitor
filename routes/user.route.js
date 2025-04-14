@@ -16,8 +16,8 @@ router.route('/')
   .get(authorize('admin'), getAllUsers);
 
 router.route('/:id')
-  .get(authorize('admin'), getUserById)
-  .put(authorize('admin'), updateUser)
-  .delete(authorize('admin'), deleteUser);
+  .get(authorize('admin', 'user'), getUserById)
+  .put(authorize('admin', 'user'), updateUser)
+  .delete(authorize('admin', 'user'), deleteUser);
 
 module.exports = router; 

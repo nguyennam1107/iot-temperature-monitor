@@ -2,7 +2,8 @@ const Reading = require('../models/Reading');
 const Device = require('../models/Device');
 const Alert = require('../models/Alert');
 const { logger } = require('../utils/logger');
-
+const { sendEmailAlert } = require('../services/mail.service');
+const { sendDiscordAlert } = require('../services/discord.service');
 // Create new reading
 exports.createReading = async (req, res) => {
   try {
@@ -32,15 +33,15 @@ exports.createReading = async (req, res) => {
     const { temperatureThreshold, humidityThreshold } = device.settings;
 
     if (temperature < temperatureThreshold.min) {
-      await createAlert(deviceId, 'low', temperature, 'temperature');
+      await createAlert(device, 'low', temperature, 'temperature');
     } else if (temperature > temperatureThreshold.max) {
-      await createAlert(deviceId, 'high', temperature, 'temperature');
+      await createAlert(device, 'high', temperature, 'temperature');
     }
-
+    
     if (humidity < humidityThreshold.min) {
-      await createAlert(deviceId, 'low', humidity, 'humidity');
+      await createAlert(device, 'low', humidity, 'humidity');
     } else if (humidity > humidityThreshold.max) {
-      await createAlert(deviceId, 'high', humidity, 'humidity');
+      await createAlert(device, 'high', humidity, 'humidity');
     }
 
     res.status(201).json(reading);
@@ -83,17 +84,22 @@ exports.getReadings = async (req, res) => {
   }
 };
 
-// Helper function to create alerts
-async function createAlert(deviceId, type, value, metric) {
+async function createAlert(device, type, value, metric) {
   try {
     const alert = new Alert({
-      deviceId,
+      deviceId: device.deviceId,
       type,
       value,
       message: `${metric.charAt(0).toUpperCase() + metric.slice(1)} ${type} alert: ${value}`
     });
     await alert.save();
+
+    // Gửi thông báo qua email và Discord (nếu là cảnh báo nhiệt độ)
+    if (metric === 'temperature') {
+      await sendEmailAlert(device, value);
+      await sendDiscordAlert(device, value);
+    }
   } catch (error) {
     logger.error('Error creating alert:', error);
   }
-} 
+}
